@@ -20,8 +20,10 @@ poetry add git+https://github.com/Vortex5Root/NatNetSDK_4.1.0.git
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ```bash
-pip install git+https://github.com/Vortex5Root/NatNetSDK_4.1.0.git
+pip install git+https://github.com/Vortex5Root/NatNetSDK_4.1.0.git#egg=natnetsdk
 ```
+
+## Documentation
 
 [![Wiki.js](https://img.shields.io/badge/wiki.js-%231976D2.svg?style=for-the-badge&logo=wikidotjs&logoColor=white)](DOCUMENTION.md)
 
