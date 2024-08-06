@@ -15,17 +15,16 @@
 
 [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
 ```bash
-poetry add git+https://github.com/Vortex5Root/NatNetSDK_4.1.0.git
+poetry add git+https://github.com/lunarring/NatNetSDK_4.1.0.git
 ```
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ```bash
-pip install git+https://github.com/Vortex5Root/NatNetSDK_4.1.0.git#egg=natnetsdk
+pip install git+https://github.com/lunarring/NatNetSDK_4.1.0.git#egg=natnetsdk
 ```
 
 ## Documentation
 
-[![Wiki.js](https://img.shields.io/badge/wiki.js-%231976D2.svg?style=for-the-badge&logo=wikidotjs&logoColor=white)](DOCUMENTION.md)
 
 ## Authors 
 [Coder]
@@ -42,6 +41,6 @@ pip install git+https://github.com/Vortex5Root/NatNetSDK_4.1.0.git#egg=natnetsdk
 <a href="https://github.com/lunarring">
     <div style="display: flex; justify-content: center; align-items: center; height: 100px; width: 450px;">
         <img src=https://avatars.githubusercontent.com/u/78172771?s=200&v=4 width=50 style="border-radius: 50%;">
-        <a href="https://github.com/lunarring">LunarRing <br><b>        {MLCore in Champalimaud Foundation}</b></a>
+        <a href="https://github.com/lunarring">LunarRing <br></a>
     </div>
 </a>
