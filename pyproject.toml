@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "natnetsdk"
+name = "natnetpacket"
 version = "4.1.0.0"
 description = "This is a remake of NatNetSDK of optitrack.com"
 authors = ["Vortex5Root"]
