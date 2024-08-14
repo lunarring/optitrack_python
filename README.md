@@ -32,7 +32,7 @@ NatNet SDK is a library that allows you to communicate with the NatNet Server an
 
 ### How to import
 ```python
-from natnetsdk.NatNetClient import NatNetClient
+from natnetpacket.NatNetClient import NatNetClient
 
 client = NatNetClient()
 ```
