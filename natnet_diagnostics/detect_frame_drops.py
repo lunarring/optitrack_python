@@ -47,7 +47,7 @@ def receive_new_frame(data_dict):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="NatNet Client for monitoring frame drops with configurable status update interval.")
-    parser.add_argument("--interval", "-i", type=int, default=10, help="Interval in seconds for printing status updates. Default is 10 seconds.")
+    parser.add_argument("--interval", "-i", type=int, default=1, help="Interval in seconds for printing status updates. Default is 10 seconds.")
     args = parser.parse_args()
 
     status_update_interval = args.interval
