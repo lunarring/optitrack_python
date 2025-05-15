@@ -26,92 +26,53 @@ connection_dropped = False
 last_frame_time = 0
 max_frame_gap = 5  # seconds without frames before considering connection lost
 
+# Global variables for tracking
+last_position = None
+identical_count_total = 0      # Total identical frames for the entire run
+identical_count_interval = 0   # Identical frames in the current reporting interval
+total_frames = 0
+
 def receive_new_frame(data_dict):
-    global last_frame_data, identical_frames_detected, identical_frames_count, total_frames_received, last_frame_time, connection_dropped
+    """Callback function that processes each frame from NatNet"""
+    global last_position, identical_count_total, identical_count_interval, total_frames
     
-    # Update the timestamp for last received frame
-    last_frame_time = time.time()
+    # Just count frames and get frame number
+    total_frames += 1
+    frame_number = data_dict.get('frame_number', 'N/A')
     
-    # Reset connection dropped flag if we're receiving frames again
-    if connection_dropped:
-        connection_dropped = False
-        print(f"INFO: Connection resumed at {datetime.datetime.now().strftime('%H:%M:%S')}")
-    
-    frame_number = data_dict.get('frame_number')
-    if frame_number is None:
-        if verbose_mode:
-            print("Warning: Frame number not found in data_dict.")
-        return
-
-    total_frames_received += 1
-
-    # Look for rigid body data
+    # Extract mocap data, rigid body data, and the first rigid body's position
     mocap_data = data_dict.get('mocap_data')
     if not mocap_data or not hasattr(mocap_data, "rigid_body_data"):
         return
-
-    rb_data = mocap_data.rigid_body_data
-    if not hasattr(rb_data, 'rigid_body_list') or not rb_data.rigid_body_list:
-        if verbose_mode:
-            print(f"No rigid bodies found in frame {frame_number}")
+        
+    rigid_body_data = mocap_data.rigid_body_data
+    if not hasattr(rigid_body_data, 'rigid_body_list') or not rigid_body_data.rigid_body_list:
         return
-
-    # Get the first rigid body (assuming it's the one we want to track)
-    rb = rb_data.rigid_body_list[0]
-    
-    # Extract position and orientation
-    position = getattr(rb, 'pos', None)
-    
-    # Look for quaternion components
-    qx = getattr(rb, 'qx', None)
-    qy = getattr(rb, 'qy', None)
-    qz = getattr(rb, 'qz', None)
-    qw = getattr(rb, 'qw', None)
-    
-    if all(x is not None for x in [qx, qy, qz, qw]):
-        orientation = (qx, qy, qz, qw)
-    else:
-        # Try alternate ways of getting orientation
-        orientation = getattr(rb, 'rot', None)
-    
-    # If we couldn't get position or orientation, skip this frame
-    if position is None or orientation is None:
+        
+    # Get the first rigid body
+    try:
+        rb = rigid_body_data.rigid_body_list[0]
+        position = getattr(rb, 'pos', None)
+        
+        if not position:
+            return
+            
+        # Check if position matches the previous frame
+        if last_position is not None and position == last_position:
+            identical_count_total += 1
+            identical_count_interval += 1
+            print(f"!!! IDENTICAL POSITION in frame {frame_number} !!!")
+            
+        # Store current position for next comparison
+        last_position = position
+        
+        # Print details in verbose mode
+        if verbose_mode and total_frames % 100 == 0:  # Only print every 100th frame
+            print(f"Frame {frame_number} Position: {position}")
+            
+    except Exception as e:
         if verbose_mode:
-            print(f"Missing position or orientation data in frame {frame_number}")
-        return
-    
-    # Combine position and orientation for comparison
-    current_frame_data = (position, orientation)
-    
-    # Check for identical frames (which might indicate dropped frames)
-    if last_frame_data is not None and current_frame_data == last_frame_data:
-        if not identical_frames_detected:
-            identical_frames_detected = True
-        identical_frames_count += 1
-        print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        print(f"WARNING: Identical rigid body data detected in frame {frame_number}")
-        print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    
-    # Update for next comparison
-    last_frame_data = current_frame_data
-    
-    # Print raw data in verbose mode
-    if verbose_mode:
-        print(f"--- Frame {frame_number} Rigid Body Data ---")
-        print(f"  Position: {position}")
-        print(f"  Orientation: {orientation}")
-        # Print all attributes of the rigid body
-        print(f"  All attributes:")
-        if hasattr(rb, '__dict__'):
-            for key, value in rb.__dict__.items():
-                processed_value = value
-                if isinstance(value, bytes):
-                    try:
-                        processed_value = value.decode('utf-8').rstrip('\x00')
-                    except:
-                        processed_value = str(value)
-                print(f"    {key}: {processed_value}")
-        print("--- End of Frame Data ---")
+            print(f"Error processing frame: {e}")
 
 def check_connection_health(streaming_client):
     """Check if we're still receiving frames and try to reconnect if needed"""
@@ -144,88 +105,69 @@ def check_connection_health(streaming_client):
                     traceback.print_exc()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Monitor rigid body data for identical frames (potential drops)")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed frame data")
-    parser.add_argument("--interval", "-i", type=int, default=1, 
-                        help="Interval in seconds for printing status updates (default: 1)")
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Simple rigid body position tracker")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
-
+    
+    # Set verbosity
     verbose_mode = args.verbose
-    status_update_interval = args.interval
-
-    streaming_client = NatNetClient()
-    monitoring_active_start_time = 0
-
-    # Network configuration
-    client_ip = "127.0.0.1"
-    server_ip = "10.40.49.47"  # Motive server IP
-
-    streaming_client.set_client_address(client_ip)
-    streaming_client.set_server_address(server_ip)
-    # streaming_client.set_use_multicast(False)  # Uncomment if not using multicast
-
-    print(f"Attempting to connect to NatNet server:")
-    print(f"  Client IP: {streaming_client.get_client_address()}")
-    print(f"  Server IP: {streaming_client.get_server_address()}")
-    print(f"  Using Multicast: {streaming_client.use_multicast}")
-    if streaming_client.use_multicast:
-        print(f"  Multicast Address: {streaming_client.multicast_address}")
-    print(f"  Verbose mode: {'ON' if verbose_mode else 'OFF'}")
-
-    streaming_client.new_frame_listener = receive_new_frame
-    print("Starting NatNet client thread...")
-    is_running = streaming_client.run()
-
-    if not is_running:
-        print("ERROR: Could not start NatNet client. Please check connection and IPs.")
-    else:
-        monitoring_active_start_time = time.time()
-        print(f"NatNet client running. Monitoring rigid body data for identical frames...")
-
+    
+    # Create NatNet client
+    client = NatNetClient()
+    client.set_client_address("127.0.0.1")
+    client.set_server_address("10.40.49.47")
+    
+    # Set up client
+    print("Connecting to NatNet server...")
+    client.new_frame_listener = receive_new_frame
+    success = client.run()
+    
+    if not success:
+        print("Error: Failed to start client")
+        sys.exit(1)
+    
+    print("Client running. Press Ctrl+C to exit.")
+    start_time = time.time()
+    last_update = 0
+    frames_previous = 0  # Track frames from previous interval
+    
     try:
-        if is_running:
-            last_status_print_time = 0
-            while True:  # Loop indefinitely
-                current_time = time.time()
-                if monitoring_active_start_time > 0 and (current_time - last_status_print_time >= status_update_interval or last_status_print_time == 0):
-                    elapsed_seconds = current_time - monitoring_active_start_time
-                    hours = int(elapsed_seconds // 3600)
-                    minutes = int((elapsed_seconds % 3600) // 60)
-                    seconds = int(elapsed_seconds % 60)
-                    formatted_elapsed_time = f"{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
-
-                    status_str = "IDENTICAL FRAMES DETECTED!" if identical_frames_detected else "OK"
-                    
-                    status_line = f"Status: {status_str} | Frames: {total_frames_received} | Identical: {identical_frames_count} | Elapsed: {formatted_elapsed_time}"
-                    if total_frames_received > 0:
-                        pct = (identical_frames_count / total_frames_received) * 100
-                        status_line += f" | Identical %: {pct:.2f}%"
-                    
-                    print(status_line)
-                    last_status_print_time = current_time
+        while True:
+            # Update status every second
+            current_time = time.time()
+            if current_time - last_update >= 1.0:
+                run_time = current_time - start_time
+                hours = int(run_time // 3600)
+                minutes = int((run_time % 3600) // 60)
+                seconds = int(run_time % 60)
                 
-                time.sleep(1)  # Keep main thread alive
-        
+                # Calculate frames in this interval
+                frames_interval = total_frames - frames_previous
+                frames_previous = total_frames
+                
+                # Print status
+                status_line = f"Status: Frames={total_frames} (+{frames_interval}/s), "
+                status_line += f"Identical: {identical_count_interval} (interval) / {identical_count_total} (total), "
+                status_line += f"Runtime={hours:02d}:{minutes:02d}:{seconds:02d}"
+                print(status_line)
+                
+                # Reset interval counters
+                identical_count_interval = 0
+                last_update = current_time
+                
+            time.sleep(0.5)  # Shorter sleep interval
     except KeyboardInterrupt:
-        print("\nStopping NatNet client due to KeyboardInterrupt...")
+        print("\nShutting down...")
     finally:
-        print()  # Ensure cursor moves to next line before final summary
-        if is_running:
-            print("Shutting down NatNet client...")
-            streaming_client.shutdown()
+        client.shutdown()
         
-        print("NatNet client stopped.")
-        print("\n=== FINAL STATISTICS ===")
-        print(f"Total frames processed: {total_frames_received}")
-        print(f"Identical frames detected: {identical_frames_count}")
-        if total_frames_received > 0:
-            pct = (identical_frames_count / total_frames_received) * 100
-            print(f"Percentage of identical frames: {pct:.2f}%")
-        
-        if identical_frames_detected:
-            print("Summary: Identical frames WERE detected during this session.")
-        else:
-            print("Summary: No identical frames detected during this session.")
-        print("========================")
+        # Print summary
+        print("\n=== SUMMARY ===")
+        print(f"Total frames: {total_frames}")
+        print(f"Total identical positions: {identical_count_total}")
+        if total_frames > 0:
+            print(f"Percentage identical: {(identical_count_total/total_frames)*100:.2f}%")
+        print("===============")
 
     print("Exiting script.") 
