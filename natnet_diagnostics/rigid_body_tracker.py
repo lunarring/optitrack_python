@@ -146,8 +146,8 @@ def check_connection_health(streaming_client):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Monitor rigid body data for identical frames (potential drops)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed frame data")
-    parser.add_argument("--interval", "-i", type=int, default=10, 
-                        help="Interval in seconds for printing status updates (default: 10)")
+    parser.add_argument("--interval", "-i", type=int, default=1, 
+                        help="Interval in seconds for printing status updates (default: 1)")
     args = parser.parse_args()
 
     verbose_mode = args.verbose
