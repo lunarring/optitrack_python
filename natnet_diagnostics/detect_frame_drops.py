@@ -39,10 +39,11 @@ if __name__ == "__main__":
     monitoring_active_start_time = 0 # Initialize
 
     # Configure the NatNet client (Update with your actual IPs)
-    client_ip = "10.40.49.143"  # Client IP
+    # client_ip = "10.40.49.143"  # Client IP
+    # client_ip = "0.0.0.0"  # Client IP
     server_ip = "10.40.49.47"   # Motive server IP
 
-    streaming_client.set_client_address(client_ip)
+    # streaming_client.set_client_address(client_ip)
     streaming_client.set_server_address(server_ip)
     streaming_client.set_use_multicast(True)  # Enable multicast
 

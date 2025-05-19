@@ -114,7 +114,6 @@ if __name__ == "__main__":
     
     # Create NatNet client
     client = NatNetClient()
-    client.set_client_address("10.40.49.143")
     client.set_server_address("10.40.49.47")
 
     # Set up client
