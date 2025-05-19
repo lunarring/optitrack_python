@@ -3,14 +3,8 @@ Motion tracking client for Optitrack Motion Tracking
 
 # Installation
 
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ```bash
 pip install git+https://github.com/lunarring/NatNetSDK_4.1.0.git
-```
-
-[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
-```bash
-poetry add git+https://github.com/lunarring/NatNetSDK_4.1.0.git
 ```
 
 # Documentation
