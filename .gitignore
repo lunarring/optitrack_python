@@ -1,4 +1,5 @@
 # Custom
+*.pts
 good*.txt
 embds_imgs/*
 promptbreeder*.txt

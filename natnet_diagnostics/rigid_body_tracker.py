@@ -7,8 +7,7 @@ import traceback
 
 # Configuration
 TARGET_RB_NAME = "A"  # The name of the rigid body to track
-SERVER_IP = "10.40.49.47"
-CLIENT_IP = "127.0.0.1" # Or your client's IP address on the network
+
 
 # Variables for tracking position changes
 last_frame_data = None  # Will store (position, orientation) tuple
@@ -115,9 +114,9 @@ if __name__ == "__main__":
     
     # Create NatNet client
     client = NatNetClient()
-    client.set_client_address("127.0.0.1")
+    client.set_client_address("10.40.49.143")
     client.set_server_address("10.40.49.47")
-    
+
     # Set up client
     print("Connecting to NatNet server...")
     client.new_frame_listener = receive_new_frame

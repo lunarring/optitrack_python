@@ -27,23 +27,6 @@ def receive_new_frame(data_dict):
     
     last_frame_number = current_frame_number
 
-    # Optional: Print full frame data for debugging, similar to hello_streaming_client
-    # print(f"--- New Frame Received (Frame #: {data_dict.get('frame_number', 'N/A')}) ---")
-    # for key, value in data_dict.items():
-    #     if key == "mocap_data":
-    #         print(f"  {key}:")
-    #         if hasattr(value, '__dict__'):
-    #             for sub_key, sub_value in value.__dict__.items():
-    #                 if isinstance(sub_value, list) and len(sub_value) > 10 and sub_key in ["rigid_bodies", "labeled_markers", "unlabeled_markers", "skeletons", "assets"]:
-    #                     print(f"    {sub_key}: List with {len(sub_value)} items (first item: {sub_value[0] if sub_value else 'empty'})")
-    #                 else:
-    #                     print(f"    {sub_key}: {sub_value}")
-    #         else:
-    #             print(f"    {value}")
-    #     else:
-    #         print(f"  {key}: {value}")
-    # print("--- End of Frame Data ---")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="NatNet Client for monitoring frame drops with configurable status update interval.")
@@ -56,12 +39,12 @@ if __name__ == "__main__":
     monitoring_active_start_time = 0 # Initialize
 
     # Configure the NatNet client (Update with your actual IPs)
-    client_ip = "127.0.0.1" 
-    server_ip = "10.40.49.47" # Example server IP
+    client_ip = "10.40.49.143"  # Client IP
+    server_ip = "10.40.49.47"   # Motive server IP
 
     streaming_client.set_client_address(client_ip)
     streaming_client.set_server_address(server_ip)
-    # streaming_client.set_use_multicast(False) # Uncomment if not using multicast
+    streaming_client.set_use_multicast(True)  # Enable multicast
 
     print(f"Attempting to connect to NatNet server:")
     print(f"  Client IP: {streaming_client.get_client_address()}")
