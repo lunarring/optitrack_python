@@ -20,8 +20,8 @@ import struct
 from threading import Thread
 import copy
 import time
-import natnetpacket.DataDescriptions as DataDescriptions
-import natnetpacket.MoCapData as MoCapData
+import optitrack_python.DataDescriptions as DataDescriptions
+import optitrack_python.MoCapData as MoCapData
 
 def trace( *args ):
     # uncomment the one you want to use

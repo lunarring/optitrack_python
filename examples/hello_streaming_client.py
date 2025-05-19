@@ -1,5 +1,5 @@
 import time
-from natnetpacket.NatNetClient import NatNetClient
+from optitrack_python.NatNetClient import NatNetClient
 
 # This is a callback function that gets connected to the NatNet client.
 # It is called once per mocap frame.
@@ -33,15 +33,7 @@ if __name__ == "__main__":
     streaming_client = NatNetClient()
 
     # Configure the NatNet client.
-    # Use your actual client IP address if it's on the same network as the server
-    # and the server needs to know it (e.g., for unicast). If server is also 10.40.49.47, then client can be 10.40.49.47 too
-    # If the server is on a different machine, replace "127.0.0.1" with your client's actual IP address.
-    client_ip = "127.0.0.1" # 혹은 "YOUR_ACTUAL_CLIENT_IP_ON_THE_NETWORK"
-    streaming_client.set_client_address(client_ip)
     streaming_client.set_server_address("10.40.49.47")
-    # streaming_client.set_server_address("10.40.49.47")
-    # use_multicast = False
-    # streaming_client.set_use_multicast(use_multicast) 
 
     print(f"Attempting to connect:")
     print(f"  Client IP: {streaming_client.get_client_address()}")

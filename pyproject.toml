@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "natnetpacket"
+name = "optitrack_python"
 version = "4.1.0.0"
 description = "This is a remake of NatNetSDK of optitrack.com"
-authors = ["Vortex5Root"]
+authors = ["Lunar Ring", "Vortex5Root"]
 license = "MIT"
 readme = "README.md"
 

@@ -1,6 +1,6 @@
 import time
 import argparse
-from natnetpacket.NatNetClient import NatNetClient
+from optitrack_python.NatNetClient import NatNetClient
 import sys
 import datetime
 import traceback

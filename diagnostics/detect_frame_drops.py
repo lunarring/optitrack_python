@@ -1,7 +1,7 @@
 import time
 import sys # Added for sys.stdout.flush()
 import argparse # Added for command-line arguments
-from natnetpacket.NatNetClient import NatNetClient
+from optitrack_python.NatNetClient import NatNetClient
 
 last_frame_number = -1
 dropped_frames_detected = False
