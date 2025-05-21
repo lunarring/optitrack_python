@@ -27,24 +27,39 @@ line_color = (255, 0, 0)  # Red
 
 
 def init_pygame():
-    """Initialize pygame window in fullscreen mode"""
+    """Initialize pygame window in maximized mode"""
     global pygame_window, font, clock
     
     pygame.init()
-    # Get the display info to set up fullscreen at native resolution
+    # Get the display info to set up a window that fills the screen
     display_info = pygame.display.Info()
     screen_width = display_info.current_w
     screen_height = display_info.current_h
     
-    # Set up fullscreen window
+    # Account for taskbar/dock by reducing height slightly
+    window_width = screen_width
+    window_height = screen_height - 60  # Reduce height to account for taskbars
+    
+    # Set up window that fills the screen but isn't fullscreen
     pygame_window = pygame.display.set_mode(
-        (screen_width, screen_height), 
-        pygame.FULLSCREEN
+        (window_width, window_height), 
+        pygame.RESIZABLE
     )
     pygame.display.set_caption("OptiTrack Position Viewer")
     
+    # Try to maximize the window using OS-specific methods
+    try:
+        import platform
+        if platform.system() == "Windows":
+            # On Windows, we can use SDL2 to maximize
+            import ctypes
+            hwnd = pygame.display.get_wm_info()["window"]
+            ctypes.windll.user32.ShowWindow(hwnd, 3)  # SW_MAXIMIZE = 3
+    except Exception:
+        pass  # Fail silently if maximize doesn't work
+    
     # Use a larger font size for better visibility
-    font_size = int(screen_height / 10)  # Scale font with screen height
+    font_size = int(window_height / 10)  # Scale font with window height
     font = pygame.font.SysFont("monospace", font_size, bold=True)
     clock = pygame.time.Clock()
     
@@ -60,6 +75,10 @@ def update_pygame_display(position, rb_name):
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:  # Allow ESC to exit
                 return False
+        elif event.type == pygame.VIDEORESIZE:
+            # Handle window resize events
+            pygame_window = pygame.display.set_mode(
+                (event.w, event.h), pygame.RESIZABLE)
     
     # Clear screen
     pygame_window.fill(bg_color)
@@ -88,15 +107,15 @@ def update_pygame_display(position, rb_name):
         # Draw the text
         pygame_window.blit(pos_surface, (text_x, text_y))
         
-        # Draw 2D representation of position (top-down view, swapped X-Y)
+        # Draw 2D representation of position using X and Z components
         center_x = width // 2
         center_y = height // 2
         
-        # Scale positions for visualization (correct X-Y swap)
+        # Scale positions for visualization
         scale = 100
-        # Use Y as X coordinate and X as Y coordinate for better visualization
-        vis_x = center_x + int(y * scale)  # Y → X
-        vis_y = center_y + int(x * scale)  # X → Y
+        # Use X and Z components for visualization (floor plane view)
+        vis_x = center_x + int(x * scale)  # X → X
+        vis_y = center_y + int(z * scale)  # Z → Y
         
         # Draw position marker
         pygame.draw.circle(pygame_window, (0, 255, 0), (vis_x, vis_y), 10)
@@ -105,9 +124,9 @@ def update_pygame_display(position, rb_name):
         if len(position_history) > 1:
             points = []
             for pos in position_history:
-                # Swap X and Y here too
-                px = center_x + int(pos[1] * scale)  # Y → X
-                py = center_y + int(pos[0] * scale)  # X → Y
+                # Use first and third components (X and Z)
+                px = center_x + int(pos[0] * scale)  # X → X
+                py = center_y + int(pos[2] * scale)  # Z → Y
                 points.append((px, py))
             
             if len(points) > 1:
@@ -214,7 +233,7 @@ def receive_new_frame(data_dict):
                 frame_positions.pop(0)
             
             # Print position as a single line (only if pygame is disabled)
-            if not use_pygame and isinstance(position, tuple) and len(position) >= 3:
+            if not use_pygame and isinstance(position, tuple):
                 # Neatly format the position data
                 x, y, z = position[0:3]
                 print(f"Position: ({x:.4f}, {y:.4f}, {z:.4f})")
@@ -266,7 +285,7 @@ if __name__ == "__main__":
     if use_pygame:
         try:
             init_pygame()
-            print("Pygame visualization enabled in fullscreen mode")
+            print("Pygame visualization enabled in maximized window mode")
             print("Press ESC to exit")
         except Exception as e:
             print(f"Error initializing pygame: {e}")
