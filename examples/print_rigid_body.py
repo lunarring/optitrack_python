@@ -3,7 +3,6 @@ import time
 import argparse
 from optitrack_python.NatNetClient import NatNetClient
 import sys
-import copy
 
 
 # Global variables for tracking
@@ -77,7 +76,7 @@ def receive_new_frame(data_dict):
         if not position:
             continue
             
-        # Check if this is the target rigid body or the first one if no target specified
+        # Check if this is our target or first rigid body
         if rb_name == target_rb_name or (not found_target and i == 0):
             found_target = True
             
@@ -85,36 +84,23 @@ def receive_new_frame(data_dict):
             if not isinstance(position, tuple):
                 try:
                     position = tuple(position)
-                except:
+                except Exception:
                     # If conversion fails, use string representation
                     position = str(position)
             
-            # Store this position for debugging
+            # Store position for history
             frame_positions.append((frame_number, rb_name, position))
             if len(frame_positions) > max_stored_positions:
                 frame_positions.pop(0)
             
-            # Check if position has changed
-            position_changed = (last_position != position)
-            
-            # If position changed or it's time for a periodic update
-            if position_changed or total_frames % 30 == 0:
-                change_marker = "CHANGED ✓" if position_changed else "SAME ✗"
-                print(f"Frame {frame_number}: {rb_name} - {change_marker}")
-                print(f"  Position: {position}")
+            # Print position as a single line
+            if isinstance(position, tuple) and len(position) >= 3:
+                # Neatly format the position data
+                x, y, z = position[0:3]
+                print(f"Position: ({x:.4f}, {y:.4f}, {z:.4f})")
+            else:
+                print(f"Position: {position}")
                 
-                if last_position and position_changed:
-                    # Calculate difference from last position
-                    try:
-                        dx = position[0] - last_position[0]
-                        dy = position[1] - last_position[1]
-                        dz = position[2] - last_position[2]
-                        print(f"  Delta: ({dx:.6f}, {dy:.6f}, {dz:.6f})")
-                    except:
-                        print(f"  Delta: Could not calculate")
-                
-                print()
-            
             # Update last position
             last_position = position
             break
@@ -156,8 +142,6 @@ if __name__ == "__main__":
         sys.exit(1)
     
     print("Client running. Press Ctrl+C to exit.")
-    print("Position will be printed when it changes.")
-    print(f"Using raw data mode: {raw_data_mode}")
     
     try:
         # Keep the program running until keyboard interrupt
@@ -166,13 +150,6 @@ if __name__ == "__main__":
             
     except KeyboardInterrupt:
         print("\nShutting down...")
-        
-        # Print the last few positions for debugging
-        if frame_positions:
-            print("\nLast recorded positions:")
-            for i, (frame, name, pos) in enumerate(frame_positions):
-                print(f"{i+1}. Frame {frame}: {name} - {pos}")
-        
     finally:
         client.shutdown()
         print("Exiting script.")
