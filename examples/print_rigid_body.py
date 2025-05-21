@@ -26,15 +26,26 @@ text_color = (0, 255, 0)  # Green
 line_color = (255, 0, 0)  # Red
 
 
-def init_pygame(width=800, height=600):
-    """Initialize pygame window"""
+def init_pygame():
+    """Initialize pygame window in fullscreen mode"""
     global pygame_window, font, clock
     
     pygame.init()
-    pygame_window = pygame.display.set_mode((width, height))
+    # Get the display info to set up fullscreen at native resolution
+    display_info = pygame.display.Info()
+    screen_width = display_info.current_w
+    screen_height = display_info.current_h
+    
+    # Set up fullscreen window
+    pygame_window = pygame.display.set_mode(
+        (screen_width, screen_height), 
+        pygame.FULLSCREEN
+    )
     pygame.display.set_caption("OptiTrack Position Viewer")
+    
     # Use a larger font size for better visibility
-    font = pygame.font.SysFont("monospace", 48, bold=True)
+    font_size = int(screen_height / 10)  # Scale font with screen height
+    font = pygame.font.SysFont("monospace", font_size, bold=True)
     clock = pygame.time.Clock()
     
     
@@ -46,6 +57,9 @@ def update_pygame_display(position, rb_name):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:  # Allow ESC to exit
+                return False
     
     # Clear screen
     pygame_window.fill(bg_color)
@@ -74,14 +88,15 @@ def update_pygame_display(position, rb_name):
         # Draw the text
         pygame_window.blit(pos_surface, (text_x, text_y))
         
-        # Draw 2D representation of position (top-down view)
+        # Draw 2D representation of position (top-down view, swapped X-Y)
         center_x = width // 2
         center_y = height // 2
         
-        # Scale positions for visualization
+        # Scale positions for visualization (correct X-Y swap)
         scale = 100
-        vis_x = center_x + int(x * scale)
-        vis_y = center_y + int(z * scale)  # Using z as y-axis for top-down view
+        # Use Y as X coordinate and X as Y coordinate for better visualization
+        vis_x = center_x + int(y * scale)  # Y → X
+        vis_y = center_y + int(x * scale)  # X → Y
         
         # Draw position marker
         pygame.draw.circle(pygame_window, (0, 255, 0), (vis_x, vis_y), 10)
@@ -90,8 +105,9 @@ def update_pygame_display(position, rb_name):
         if len(position_history) > 1:
             points = []
             for pos in position_history:
-                px = center_x + int(pos[0] * scale)
-                py = center_y + int(pos[2] * scale)
+                # Swap X and Y here too
+                px = center_x + int(pos[1] * scale)  # Y → X
+                py = center_y + int(pos[0] * scale)  # X → Y
                 points.append((px, py))
             
             if len(points) > 1:
@@ -197,12 +213,12 @@ def receive_new_frame(data_dict):
             if len(frame_positions) > max_stored_positions:
                 frame_positions.pop(0)
             
-            # Print position as a single line
-            if isinstance(position, tuple) and len(position) >= 3:
+            # Print position as a single line (only if pygame is disabled)
+            if not use_pygame and isinstance(position, tuple) and len(position) >= 3:
                 # Neatly format the position data
                 x, y, z = position[0:3]
                 print(f"Position: ({x:.4f}, {y:.4f}, {z:.4f})")
-            else:
+            elif not use_pygame:
                 print(f"Position: {position}")
                 
             # Update pygame window if enabled
@@ -250,7 +266,8 @@ if __name__ == "__main__":
     if use_pygame:
         try:
             init_pygame()
-            print("Pygame visualization enabled")
+            print("Pygame visualization enabled in fullscreen mode")
+            print("Press ESC to exit")
         except Exception as e:
             print(f"Error initializing pygame: {e}")
             use_pygame = False
@@ -281,8 +298,9 @@ if __name__ == "__main__":
             
             if use_pygame and pygame_window:
                 # Update the pygame display from the main thread
-                running = update_pygame_display(last_position, 
-                                               rb_name_for_pygame)
+                running = update_pygame_display(
+                    last_position, rb_name_for_pygame
+                )
                 
     except KeyboardInterrupt:
         print("\nShutting down...")
