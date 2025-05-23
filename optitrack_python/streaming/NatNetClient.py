@@ -1,4 +1,5 @@
-﻿#Copyright © 2018 Naturalpoint
+﻿#!/usr/bin/env python3
+#Copyright © 2018 Naturalpoint
 #
 #Licensed under the Apache License, Version 2.0 (the "License")
 #you may not use this file except in compliance with the License.
@@ -20,8 +21,8 @@ import struct
 from threading import Thread
 import copy
 import time
-import optitrack_python.DataDescriptions as DataDescriptions
-import optitrack_python.MoCapData as MoCapData
+from . import DataDescriptions
+from . import MoCapData
 
 def trace( *args ):
     # uncomment the one you want to use

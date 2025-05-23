@@ -1,6 +1,7 @@
+#!/usr/bin/env python3
 import time
 import argparse
-from optitrack_python.NatNetClient import NatNetClient
+from optitrack_python.streaming.NatNetClient import NatNetClient
 import sys
 import datetime
 import traceback
