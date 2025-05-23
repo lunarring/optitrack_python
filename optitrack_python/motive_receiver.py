@@ -23,13 +23,26 @@ def compute_sq_distances(a, b):
     # distances = np.sqrt(dist_squared)
     
     # Create dictionary to store dist_squared with index pairs
-    distance_dict = {(i_a, i_b): dist_squared[i_a, i_b] for i_a in range(dist_squared.shape[0]) for i_b in range(dist_squared.shape[1])}
+    distance_dict = {
+        (i_a, i_b): dist_squared[i_a, i_b] 
+        for i_a in range(dist_squared.shape[0]) 
+        for i_b in range(dist_squared.shape[1])
+    }
     distance_dict = dict(sorted(distance_dict.items(), key=lambda item: item[1]))
     return distance_dict
 
 
 class MotiveReceiver:
-    def __init__(self, server_ip, client_ip, max_buffer_size=100000, start_process=True, do_record_streaming=False, do_mock_streaming=False, fn_mock='streaming_mock.pkl'):
+    def __init__(
+        self, 
+        server_ip, 
+        client_ip="127.0.0.1",  # Default to localhost instead of None
+        max_buffer_size=100000, 
+        start_process=True, 
+        do_record_streaming=False, 
+        do_mock_streaming=False, 
+        fn_mock='streaming_mock.pkl'
+    ):
         self.server_ip = server_ip
         self.client_ip = client_ip
         self.max_buffer_size = max_buffer_size
@@ -63,7 +76,7 @@ class MotiveReceiver:
         if start_process:
             self.start_process()
 
-    def get_last(self,simbly,model_name=""):
+    def get_last_by_model(self, simbly, model_name=""):
         if model_name in self.list_dict_packets[-1][simbly].keys():
             return self.list_dict_packets[-1][simbly][model_name]
         else:
@@ -171,8 +184,6 @@ class MotiveReceiver:
     def stop(self):
         print("stopping process!")
         self.running = False
-        self.process.kill()
-        self.process.wait()
         self.thread.join()
         
     def get_last(self, label=None):
@@ -186,44 +197,44 @@ class MotiveReceiver:
                     return self.list_dict_packets[-1][label]
                 else:
                     return None
-                
-
-    
 
 
-# if __name__ == "__main__body":
-#     motive = MotiveReceiver("10.40.48.84", "10.40.50.40", do_record_streaming=True, do_mock_streaming=False, fn_mock='skeleton_mock.pkl', start_process = True)
+if __name__ == "__main__":
+    # Create a MotiveReceiver instance with the server IP
+    motive = MotiveReceiver(server_ip="10.40.49.47")
     
-#     self = BodyTracker(motive=motive)
+    # Wait a moment for connection to establish
+    import time
+    time.sleep(1)
     
-#     time.sleep(0.05)
-#     while True:
-#         # right_hand.update()
-#         # print(motive.get_last())
-#         self.update()
-#         # if len(self._head.positions) > 1:
-#         #     print(f"LH {self.positions_left_hand[-1]} RH {self.positions_right_hand[-1]}")
+    # Keep the script running to receive and display data
+    try:
+        print("Receiving data from OptiTrack. Press Ctrl+C to stop.")
+        print("Waiting for data...")
+        
+        count = 0
+        while True:
+            # Get the latest data
+            latest_data = motive.get_last()
+            if latest_data:
+                count += 1
+                if count % 10 == 0:  # Only print every 10th frame to avoid flooding the console
+                    print(f"\nFrame ID: {latest_data['frame_id']}")
+                    print(f"Timestamp: {latest_data['timestamp']}")
+                    
+                    # Check if any rigid bodies are available
+                    if 'rigid_bodies_full' in latest_data and latest_data['rigid_bodies_full']:
+                        print("\nRigid Bodies:")
+                        for name, body in latest_data['rigid_bodies_full'].items():
+                            print(f"  {name}: Position {body['pos']}")
+                    else:
+                        print("No rigid bodies detected")
+            else:
+                print(".", end="", flush=True)
             
-
-
-# if __name__ == "__main__":
-#     motive = MotiveReceiver("10.40.48.84", '10.40.50.40')
-    
-#     self = RigidBody(motive, "A")
-    
-#     while True:
-#         self.update()
-#         # print(self.fract_xz[0])
-        
-#         velocity_norm = np.linalg.norm(self.v_last)
-#         acceleration_norm = np.linalg.norm(self.a_last)
-        
-#         print(f'Velocity norm: {velocity_norm:.5f}' if velocity_norm is not None else '', 
-#               f'Acceleration norm: {acceleration_norm:.5f}' if acceleration_norm is not None else '')
-
-#         # if len(self.positions) > 0:
-#         #     print(f'self.positions {self.positions[-1]}')
-        
-
-#         time.sleep(0.1)
+            # Wait a bit before getting the next update
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("\nStopping receiver...")
+        motive.stop()
         
