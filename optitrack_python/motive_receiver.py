@@ -36,7 +36,7 @@ class MotiveReceiver:
     def __init__(
         self, 
         server_ip, 
-        client_ip="127.0.0.1",  # Default to localhost instead of None
+        client_ip="0.0.0.0",  # Default to all interfaces to receive multicast
         max_buffer_size=100000, 
         start_process=True, 
         do_record_streaming=False, 
@@ -212,27 +212,22 @@ if __name__ == "__main__":
         print("Receiving data from OptiTrack. Press Ctrl+C to stop.")
         print("Waiting for data...")
         
-        count = 0
         while True:
-            # Get the latest data
             latest_data = motive.get_last()
             if latest_data:
-                count += 1
-                if count % 10 == 0:  # Only print every 10th frame to avoid flooding the console
-                    print(f"\nFrame ID: {latest_data['frame_id']}")
-                    print(f"Timestamp: {latest_data['timestamp']}")
-                    
-                    # Check if any rigid bodies are available
-                    if 'rigid_bodies_full' in latest_data and latest_data['rigid_bodies_full']:
-                        print("\nRigid Bodies:")
-                        for name, body in latest_data['rigid_bodies_full'].items():
-                            print(f"  {name}: Position {body['pos']}")
-                    else:
-                        print("No rigid bodies detected")
+                # Print all frames with all rigid bodies
+                print(f"\nFrame ID: {latest_data['frame_id']}")
+                print(f"Timestamp: {latest_data['timestamp']}")
+                if 'rigid_bodies_full' in latest_data and latest_data['rigid_bodies_full']:
+                    print("\nRigid Bodies:")
+                    for name, body in latest_data['rigid_bodies_full'].items():
+                        pos = body.get('pos')
+                        print(f"  {name}: Position {pos}")
+                else:
+                    print("No rigid bodies detected")
             else:
                 print(".", end="", flush=True)
-            
-            # Wait a bit before getting the next update
+
             time.sleep(0.1)
     except KeyboardInterrupt:
         print("\nStopping receiver...")
