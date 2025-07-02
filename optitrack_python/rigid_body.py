@@ -188,16 +188,69 @@ def get_fract(val_fract0, val_fract1, val):
 
 if __name__ == "__main__":
     from optitrack_python.motive_receiver import MotiveReceiver
-    motive = MotiveReceiver(server_ip="10.40.48.84", client_ip="10.40.50.40")
     
-    self = BodyTracker(motive=motive)
+    # Use the exact same setup as the working motive_receiver.py example
+    print("Connecting to OptiTrack...")
+    motive = MotiveReceiver(server_ip="10.40.49.47")
     
-    time.sleep(0.05)
-    while True:
-        time.sleep(0.05)
-        print(self._head.positions.get_last())
-        self._head.update()
-        
-        # right_hand.update()
-        # print(motive.get_last())
-        # self.update()
+    print("Waiting for data connection...")
+    time.sleep(1)
+    
+    # Test basic connection first
+    print("Testing basic connection...")
+    for i in range(50):  # Try for 5 seconds
+        latest_data = motive.get_last()
+        if latest_data:
+            print(f"✓ Connection established! Frame ID: {latest_data['frame_id']}")
+            break
+        time.sleep(0.1)
+    else:
+        print("✗ No data received. Check OptiTrack connection.")
+        motive.stop()
+        exit(1)
+    
+    # Create a single rigid body "B" for demonstration
+    rigid_body_b = RigidBody(motive, "B")
+    
+    print("Starting rigid body tracking for 'B'...")
+    frame_count = 0
+    
+    try:
+        while True:
+            time.sleep(0.1)  # Same as motive_receiver example
+            frame_count += 1
+            
+            latest_data = motive.get_last()
+            if not latest_data:
+                continue
+                
+            # Print raw data like motive_receiver does for comparison
+            if frame_count % 10 == 1:  # Every second
+                print(f"\nFrame ID: {latest_data['frame_id']}")
+                print(f"Timestamp: {latest_data['timestamp']}")
+                if 'rigid_bodies_full' in latest_data and latest_data['rigid_bodies_full']:
+                    print("Raw Rigid Bodies:")
+                    for name, body in latest_data['rigid_bodies_full'].items():
+                        pos = body.get('pos')
+                        print(f"  {name}: Position {pos}")
+            
+            # Now try to use our RigidBody class
+            rigid_body_b.update()
+            position = rigid_body_b.positions.get_last()
+            
+            # Only print if we got real data (not zeros)
+            if not np.allclose(position, [0, 0, 0]):
+                print(f"RigidBody B processed position: {position}")
+                
+                if len(rigid_body_b.velocities.buffer) > 0:
+                    velocity = rigid_body_b.velocities.get_last()
+                    print(f"RigidBody B velocity: {velocity}")
+                
+                orientation = rigid_body_b.orientations.get_last()
+                print(f"RigidBody B orientation: {orientation}")
+                
+                print("-" * 30)
+                
+    except KeyboardInterrupt:
+        print("\nStopping...")
+        motive.stop()
