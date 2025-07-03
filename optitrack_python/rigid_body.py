@@ -210,7 +210,7 @@ if __name__ == "__main__":
         exit(1)
     
     # Create a single rigid body "B" for demonstration
-    rigid_body_b = RigidBody(motive, "B")
+    rigid_body = RigidBody(motive, "C")
     
     print("Starting rigid body tracking for 'B'...")
     frame_count = 0
@@ -235,19 +235,19 @@ if __name__ == "__main__":
                         print(f"  {name}: Position {pos}")
             
             # Now try to use our RigidBody class
-            rigid_body_b.update()
-            position = rigid_body_b.positions.get_last()
+            rigid_body.update()
+            position = rigid_body.positions.get_last()
             
             # Only print if we got real data (not zeros)
             if not np.allclose(position, [0, 0, 0]):
-                print(f"RigidBody B processed position: {position}")
+                print(f"RigidBody processed position: {position}")
                 
-                if len(rigid_body_b.velocities.buffer) > 0:
-                    velocity = rigid_body_b.velocities.get_last()
-                    print(f"RigidBody B velocity: {velocity}")
+                if len(rigid_body.velocities.buffer) > 0:
+                    velocity = rigid_body.velocities.get_last()
+                    print(f"RigidBody velocity: {velocity}")
                 
-                orientation = rigid_body_b.orientations.get_last()
-                print(f"RigidBody B orientation: {orientation}")
+                orientation = rigid_body.orientations.get_last()
+                print(f"RigidBody orientation: {orientation}")
                 
                 print("-" * 30)
                 
