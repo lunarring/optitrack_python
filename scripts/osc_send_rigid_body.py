@@ -58,9 +58,9 @@ def main():
     signals = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
     # Add scaling configuration: define in/out min and max for each channel
     scale_config = {
-        'x':    {'in_min': 0.0,   'in_max': 1.0,   'out_min': 0.0, 'out_max': 1.0},
-        'y':    {'in_min': 0.0,   'in_max': 1.0,   'out_min': 0.0, 'out_max': 1.0},
-        'z':    {'in_min': 0.0,   'in_max': 1.0,   'out_min': 0.0, 'out_max': 1.0},
+        'x':    {'in_min': -3.5,   'in_max': 3.5,   'out_min': 0.0, 'out_max': 1.0},
+        'y':    {'in_min': 0.0,   'in_max': 2.1,   'out_min': 0.0, 'out_max': 1.0},
+        'z':    {'in_min': -3.5,   'in_max': 3.5,   'out_min': 0.0, 'out_max': 1.0},
         'roll': {'in_min': -180.0,'in_max': 180.0,'out_min': 0.0, 'out_max': 1.0},
         'pitch':{'in_min': -180.0,'in_max': 180.0,'out_min': 0.0, 'out_max': 1.0},
         'yaw':  {'in_min': -180.0,'in_max': 180.0,'out_min': 0.0, 'out_max': 1.0},
