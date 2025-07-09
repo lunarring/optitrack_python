@@ -1,14 +1,20 @@
 import lunar_tools as lt
 import time
 import numpy as np
+import argparse
 
 def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Receive OSC rigid body data')
+    parser.add_argument('--ip', default='127.0.0.1', help='IP address to listen on (default: 127.0.0.1)')
+    args = parser.parse_args()
+    
     # Configuration
     rigid_body_name = "B"
     
     # Setup OSC receiver
     print("Setting up OSC receiver...")
-    receiver = lt.OSCReceiver('127.0.0.1')
+    receiver = lt.OSCReceiver(args.ip)
     
     print(f"Listening for rigid body '{rigid_body_name}' OSC data...")
     print(f"Expected messages: /{rigid_body_name}_x, /{rigid_body_name}_y, /{rigid_body_name}_z, /{rigid_body_name}_roll, /{rigid_body_name}_pitch, /{rigid_body_name}_yaw")
