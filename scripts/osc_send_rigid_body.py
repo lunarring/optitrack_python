@@ -2,6 +2,7 @@ import lunar_tools as lt
 import time
 import sys
 import os
+import argparse
 
 # Add the parent directory to the path to import optitrack_python
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -10,12 +11,22 @@ from optitrack_python.motive_receiver import MotiveReceiver
 from optitrack_python.rigid_body import RigidBody
 
 def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Stream rigid body data from OptiTrack to OSC')
+    parser.add_argument('--receiver-ip', default='127.0.0.1', 
+                       help='IP address of the OSC receiver (default: 127.0.0.1)')
+    parser.add_argument('--rigid-body', default='B',
+                       help='Name of the rigid body to track (default: B)')
+    args = parser.parse_args()
+    
     # Configuration
-    rigid_body_name = "B"
+    rigid_body_name = args.rigid_body
+    receiver_ip = args.receiver_ip
     
     # Setup OptiTrack connection
-    print("Connecting to OptiTrack...")
-    motive = MotiveReceiver(server_ip="10.40.49.47")
+    server_ip = lt.get_local_ip()
+    print(f"Connecting to OptiTrack at {server_ip}...")
+    motive = MotiveReceiver(server_ip=server_ip)
     
     print("Waiting for data connection...")
     time.sleep(1)
