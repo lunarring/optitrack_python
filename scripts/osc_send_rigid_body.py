@@ -10,6 +10,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from optitrack_python.motive_receiver import MotiveReceiver
 from optitrack_python.rigid_body import RigidBody
 
+# Add a helper to linearly scale values based on configuration
+def scale_value(val, in_min, in_max, out_min, out_max):
+    # Linearly scale val from [in_min, in_max] to [out_min, out_max]
+    scaled = (val - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
+    # Clamp to output range
+    return max(min(scaled, out_max), out_min)
+
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Send OptiTrack rigid body data via OSC')
@@ -49,6 +56,15 @@ def main():
     # Setup OSC senders - one for each signal
     print(f"Setting up OSC senders to {args.ip}...")
     signals = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
+    # Add scaling configuration: define in/out min and max for each channel
+    scale_config = {
+        'x':    {'in_min': 0.0,   'in_max': 1.0,   'out_min': 0.0, 'out_max': 1.0},
+        'y':    {'in_min': 0.0,   'in_max': 1.0,   'out_min': 0.0, 'out_max': 1.0},
+        'z':    {'in_min': 0.0,   'in_max': 1.0,   'out_min': 0.0, 'out_max': 1.0},
+        'roll': {'in_min': -180.0,'in_max': 180.0,'out_min': 0.0, 'out_max': 1.0},
+        'pitch':{'in_min': -180.0,'in_max': 180.0,'out_min': 0.0, 'out_max': 1.0},
+        'yaw':  {'in_min': -180.0,'in_max': 180.0,'out_min': 0.0, 'out_max': 1.0},
+    }
     senders = {}
     
     for i, signal in enumerate(signals):
@@ -73,19 +89,30 @@ def main():
             
             # Only send if we have valid data (not zeros)
             if not position.any() == 0:
-                # Send position data using separate senders
-                senders['x'].send_message(f"/{rigid_body_name}_x", float(position[0]))
-                senders['y'].send_message(f"/{rigid_body_name}_y", float(position[1]))
-                senders['z'].send_message(f"/{rigid_body_name}_z", float(position[2]))
+                # Send position data using separate senders with scaling
+                senders['x'].send_message(f"/{rigid_body_name}_x", scale_value(position[0], **scale_config['x']))
+                senders['y'].send_message(f"/{rigid_body_name}_y", scale_value(position[1], **scale_config['y']))
+                senders['z'].send_message(f"/{rigid_body_name}_z", scale_value(position[2], **scale_config['z']))
                 
-                # Send orientation data (euler angles) using separate senders
-                senders['roll'].send_message(f"/{rigid_body_name}_roll", float(euler_angles[0]))
-                senders['pitch'].send_message(f"/{rigid_body_name}_pitch", float(euler_angles[1]))
-                senders['yaw'].send_message(f"/{rigid_body_name}_yaw", float(euler_angles[2]))
+                # Send orientation data (euler angles) using separate senders with scaling
+                senders['roll'].send_message(f"/{rigid_body_name}_roll", scale_value(euler_angles[0], **scale_config['roll']))
+                senders['pitch'].send_message(f"/{rigid_body_name}_pitch", scale_value(euler_angles[1], **scale_config['pitch']))
+                senders['yaw'].send_message(f"/{rigid_body_name}_yaw", scale_value(euler_angles[2], **scale_config['yaw']))
                 
                 # Print status occasionally
                 if frame_count % 100 == 0:
-                    print(f"Streaming frame {frame_count}: pos={position}, euler={euler_angles}")
+                    # Compute scaled values for logging
+                    scaled_position = [
+                        scale_value(position[0], **scale_config['x']),
+                        scale_value(position[1], **scale_config['y']),
+                        scale_value(position[2], **scale_config['z']),
+                    ]
+                    scaled_euler = [
+                        scale_value(euler_angles[0], **scale_config['roll']),
+                        scale_value(euler_angles[1], **scale_config['pitch']),
+                        scale_value(euler_angles[2], **scale_config['yaw']),
+                    ]
+                    print(f"Streaming frame {frame_count}: raw_pos={position}, raw_euler={euler_angles}, scaled_pos={scaled_position}, scaled_euler={scaled_euler}")
                     
     except KeyboardInterrupt:
         print("\nStopping OSC streaming...")
