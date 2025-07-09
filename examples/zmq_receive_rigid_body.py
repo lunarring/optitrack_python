@@ -13,8 +13,8 @@ def main():
     rigid_body_name = "B"
     signals = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
 
-    print("Setting up ZMQ server...")
-    server = lt.ZMQPairEndpoint(is_server=True, ip=args.ip, port=args.port)
+    print("Setting up ZMQ client...")
+    client = lt.ZMQPairEndpoint(is_server=False, ip=args.ip, port=args.port)
 
     print(f"Listening for rigid body '{rigid_body_name}' ZMQ data on {args.ip}:{args.port}")
     print(f"Expected JSON keys: 'frame', {signals}")
@@ -26,7 +26,7 @@ def main():
             time.sleep(0.1)  # 10Hz polling rate
             frame_count += 1
 
-            msgs = server.get_messages()
+            msgs = client.get_messages()
             if msgs:
                 for msg in msgs:
                     frame = msg.get('frame', frame_count)

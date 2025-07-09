@@ -52,9 +52,9 @@ def main():
 
     rigid_body = RigidBody(motive, rigid_body_name)
 
-    # Setup ZMQ client endpoint
-    print(f"Setting up ZMQ client to {ip_address}:{args.port}...")
-    client = lt.ZMQPairEndpoint(is_server=False, ip=ip_address, port=args.port)
+    # Setup ZMQ server endpoint
+    print(f"Setting up ZMQ server at {ip_address}:{args.port}...")
+    server = lt.ZMQPairEndpoint(is_server=True, ip=ip_address, port=args.port)
 
     # Scaling configuration
     scale_config = {
@@ -81,7 +81,7 @@ def main():
                     cfg = scale_config[signal]
                     test_vals[signal] = random.uniform(cfg['out_min'], cfg['out_max'])
                 try:
-                    client.send_json({'frame': frame_count, **test_vals})
+                    server.send_json({'frame': frame_count, **test_vals})
                 except zmq.error.Again:
                     pass
                 if frame_count % 100 == 0:
@@ -100,7 +100,7 @@ def main():
                     raw = position[i] if i < 3 else euler_angles[i - 3]
                     data[signal] = scale_value(raw, **cfg)
                 try:
-                    client.send_json({'frame': frame_count, **data})
+                    server.send_json({'frame': frame_count, **data})
                 except zmq.error.Again:
                     pass
                 if frame_count % 100 == 0:
