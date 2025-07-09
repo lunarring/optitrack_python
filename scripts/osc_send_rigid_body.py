@@ -15,10 +15,12 @@ def main():
     parser = argparse.ArgumentParser(description='Send OptiTrack rigid body data via OSC')
     parser.add_argument('--osc-ip', required=True, help='OSC receiver IP address')
     parser.add_argument('--rigid-body', default='B', help='Rigid body name (default: B)')
+    parser.add_argument('--rate', type=float, default=100.0, help='Sampling rate in Hz (default: 100)')
     args = parser.parse_args()
     
     # Configuration
     rigid_body_name = args.rigid_body
+    sleep_time = 1.0 / args.rate  # Convert Hz to sleep time in seconds
     
     # Setup OptiTrack connection
     print("Connecting to OptiTrack...")
@@ -47,12 +49,12 @@ def main():
     print(f"Setting up OSC sender to {args.osc_ip}...")
     sender = lt.OSCSender(args.osc_ip)
     
-    print(f"Starting OSC streaming for rigid body '{rigid_body_name}'...")
+    print(f"Starting OSC streaming for rigid body '{rigid_body_name}' at {args.rate}Hz...")
     frame_count = 0
     
     try:
         while True:
-            time.sleep(0.01)  # 100Hz update rate
+            time.sleep(sleep_time)  # Use sleep_time for consistent update rate
             frame_count += 1
             
             # Update rigid body data
