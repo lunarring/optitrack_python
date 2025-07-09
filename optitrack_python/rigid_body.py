@@ -210,7 +210,7 @@ if __name__ == "__main__":
         exit(1)
     
     # Create a single rigid body "B" for demonstration
-    rigid_body = RigidBody(motive, "C")
+    rigid_body = RigidBody(motive, "A")
     
     print("Starting rigid body tracking for 'B'...")
     frame_count = 0

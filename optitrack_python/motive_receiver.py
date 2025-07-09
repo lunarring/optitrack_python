@@ -6,6 +6,7 @@ import math
 import time
 import threading
 import sys
+import signal
 # # from icecream import ic
 
 # #from util import euler_from_quaternion
@@ -94,30 +95,29 @@ class MotiveReceiver:
         self.thread.start()
 
     def get_data(self):
-        optionsDict = {}
-        optionsDict["clientAddress"] = self.client_ip
-        optionsDict["serverAddress"] = self.server_ip
-        optionsDict["use_multicast"] = True
+        try:
+            optionsDict = {}
+            optionsDict["clientAddress"] = self.client_ip
+            optionsDict["serverAddress"] = self.server_ip
+            optionsDict["use_multicast"] = True
 
-        self.streaming_client = NatNetClient()
-        if self.do_record_streaming:
-            self.streaming_client.set_record_streaming(fn_mock=self.fn_mock)
-        if self.do_mock_streaming:
-            self.streaming_client.set_mock_streaming(fn_mock=self.fn_mock)
-        self.streaming_client.set_client_address(optionsDict["clientAddress"])
-        self.streaming_client.set_server_address(optionsDict["serverAddress"])
-        self.streaming_client.set_use_multicast(optionsDict["use_multicast"])
-        self.streaming_client.new_frame_listener = self.process_packet
-            
-        is_running = self.streaming_client.run()
-        if not is_running:
-            print("ERROR: Could not start streaming client.")
-            try:
-                sys.exit(1)
-            except SystemExit:
-                print("...")
-            finally:
-                print("exiting")
+            self.streaming_client = NatNetClient()
+            if self.do_record_streaming:
+                self.streaming_client.set_record_streaming(fn_mock=self.fn_mock)
+            if self.do_mock_streaming:
+                self.streaming_client.set_mock_streaming(fn_mock=self.fn_mock)
+            self.streaming_client.set_client_address(optionsDict["clientAddress"])
+            self.streaming_client.set_server_address(optionsDict["serverAddress"])
+            self.streaming_client.set_use_multicast(optionsDict["use_multicast"])
+            self.streaming_client.new_frame_listener = self.process_packet
+                
+            is_running = self.streaming_client.run()
+            if not is_running:
+                print("ERROR: Could not start streaming client.")
+                return
+        except Exception as e:
+            print(f"ERROR: Exception in streaming client: {e}")
+            return
             
 
     def save_packet(self, packet_content):
@@ -184,6 +184,8 @@ class MotiveReceiver:
     def stop(self):
         print("stopping process!")
         self.running = False
+        if hasattr(self, 'streaming_client') and self.streaming_client:
+            self.streaming_client.shutdown()
         self.thread.join()
         
     def get_last(self, label=None):
@@ -202,6 +204,18 @@ class MotiveReceiver:
 if __name__ == "__main__":
     # Create a MotiveReceiver instance with the server IP
     motive = MotiveReceiver(server_ip="10.40.49.47")
+    
+    # Signal handler for graceful shutdown
+    def signal_handler(signum, frame):
+        print("\nStopping receiver...")
+        motive.stop()
+        print("Shutdown complete.")
+        sys.exit(0)
+    
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    if hasattr(signal, 'SIGTERM'):
+        signal.signal(signal.SIGTERM, signal_handler)
     
     # Wait a moment for connection to establish
     import time
@@ -228,8 +242,9 @@ if __name__ == "__main__":
             else:
                 print(".", end="", flush=True)
 
-            time.sleep(0.1)
+            time.sleep(0.05)
     except KeyboardInterrupt:
         print("\nStopping receiver...")
         motive.stop()
+        print("Shutdown complete.")
         

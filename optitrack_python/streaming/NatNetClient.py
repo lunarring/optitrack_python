@@ -280,7 +280,7 @@ class NatNetClient:
             result.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             result.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(self.multicast_address) + socket.inet_aton(self.local_ip_address))
             try:
-                result.bind( (self.multicast_address, port) )
+                result.bind( ('', port) )
             except socket.error as msg:
                 # # print("ERROR: data socket error occurred:\n%s" %msg)
                 # # print("  Check Motive/Server mode requested mode agreement.  You requested Multicast ")
@@ -318,7 +318,7 @@ class NatNetClient:
                 result = None
             
             if(self.multicast_address != "255.255.255.255"):
-                mreq = struct.pack("4sl", socket.inet_aton(self.multicast_group), socket.INADDR_ANY)
+                mreq = struct.pack("4sl", socket.inet_aton(self.multicast_address), socket.INADDR_ANY)
                 result.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
         return result
@@ -1858,9 +1858,13 @@ class NatNetClient:
         self.stop_threads = True
         # closing sockets causes blocking recvfrom to throw
         # an exception and break the loop
-        self.command_socket.close()
-        self.data_socket.close()
-        # attempt to join the threads back.
-        self.command_thread.join()
-        self.data_thread.join()
+        if self.command_socket:
+            self.command_socket.close()
+        if self.data_socket:
+            self.data_socket.close()
+        # attempt to join the threads back with timeout
+        if self.command_thread:
+            self.command_thread.join(timeout=2.0)
+        if self.data_thread:
+            self.data_thread.join(timeout=2.0)
 
