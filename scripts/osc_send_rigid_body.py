@@ -2,6 +2,7 @@ import lunar_tools as lt
 import time
 import sys
 import os
+import argparse
 
 # Add the parent directory to the path to import optitrack_python
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -10,8 +11,14 @@ from optitrack_python.motive_receiver import MotiveReceiver
 from optitrack_python.rigid_body import RigidBody
 
 def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Send OptiTrack rigid body data via OSC')
+    parser.add_argument('--osc-ip', required=True, help='OSC receiver IP address')
+    parser.add_argument('--rigid-body', default='B', help='Rigid body name (default: B)')
+    args = parser.parse_args()
+    
     # Configuration
-    rigid_body_name = "B"
+    rigid_body_name = args.rigid_body
     
     # Setup OptiTrack connection
     print("Connecting to OptiTrack...")
@@ -37,8 +44,8 @@ def main():
     rigid_body = RigidBody(motive, rigid_body_name)
     
     # Setup OSC sender
-    print("Setting up OSC sender...")
-    sender = lt.OSCSender(lt.get_local_ip())
+    print(f"Setting up OSC sender to {args.osc_ip}...")
+    sender = lt.OSCSender(args.osc_ip)
     
     print(f"Starting OSC streaming for rigid body '{rigid_body_name}'...")
     frame_count = 0
