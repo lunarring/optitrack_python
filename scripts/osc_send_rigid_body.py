@@ -3,6 +3,7 @@ import time
 import sys
 import os
 import argparse
+import random
 
 # Add the parent directory to the path to import optitrack_python
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -24,7 +25,9 @@ def main():
     parser.add_argument('--port', type=int, default=8003, help='OSC receiver port (default: 8003)')
     parser.add_argument('--rigid-body', default='B', help='Rigid body name (default: B)')
     parser.add_argument('--rate', type=float, default=100.0, help='Sampling rate in Hz (default: 100)')
+    parser.add_argument('--test-mode', action='store_true', help='Send random values within output range instead of real data')
     args = parser.parse_args()
+    test_mode = args.test_mode
     
     # Configuration
     rigid_body_name = args.rigid_body
@@ -80,6 +83,18 @@ def main():
             time.sleep(sleep_time)  # Use sleep_time for consistent update rate
             frame_count += 1
             
+            if test_mode:
+                # Test mode: send random values within output range
+                test_vals = {}
+                for signal in signals:
+                    cfg = scale_config[signal]
+                    val = random.uniform(cfg['out_min'], cfg['out_max'])
+                    test_vals[signal] = val
+                    senders[signal].send_message(f"/{rigid_body_name}_{signal}", val)
+                if frame_count % 100 == 0:
+                    print(f"Test mode frame {frame_count}: {test_vals}")
+                continue
+
             # Update rigid body data
             rigid_body.update()
             
