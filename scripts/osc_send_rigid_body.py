@@ -13,7 +13,8 @@ from optitrack_python.rigid_body import RigidBody
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Send OptiTrack rigid body data via OSC')
-    parser.add_argument('--osc-ip', required=True, help='OSC receiver IP address')
+    parser.add_argument('--ip', required=True, help='OSC receiver IP address')
+    parser.add_argument('--port', type=int, default=8003, help='OSC receiver port (default: 8003)')
     parser.add_argument('--rigid-body', default='B', help='Rigid body name (default: B)')
     parser.add_argument('--rate', type=float, default=100.0, help='Sampling rate in Hz (default: 100)')
     args = parser.parse_args()
@@ -45,10 +46,16 @@ def main():
     # Create rigid body
     rigid_body = RigidBody(motive, rigid_body_name)
     
-    # Setup OSC sender
-    print(f"Setting up OSC sender to {args.osc_ip}...")
-    sender = lt.OSCSender(args.osc_ip)
+    # Setup OSC senders - one for each signal
+    print(f"Setting up OSC senders to {args.ip}...")
+    signals = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
+    senders = {}
     
+    for i, signal in enumerate(signals):
+        port = args.port + i
+        senders[signal] = lt.OSCSender(args.ip, port)
+        print(f"  {rigid_body_name}_{signal} -> {args.ip}:{port}")
+
     print(f"Starting OSC streaming for rigid body '{rigid_body_name}' at {args.rate}Hz...")
     frame_count = 0
     
@@ -66,15 +73,15 @@ def main():
             
             # Only send if we have valid data (not zeros)
             if not position.any() == 0:
-                # Send position data
-                sender.send_message(f"/{rigid_body_name}_x", float(position[0]))
-                sender.send_message(f"/{rigid_body_name}_y", float(position[1]))
-                sender.send_message(f"/{rigid_body_name}_z", float(position[2]))
+                # Send position data using separate senders
+                senders['x'].send_message(f"/{rigid_body_name}_x", float(position[0]))
+                senders['y'].send_message(f"/{rigid_body_name}_y", float(position[1]))
+                senders['z'].send_message(f"/{rigid_body_name}_z", float(position[2]))
                 
-                # Send orientation data (euler angles)
-                sender.send_message(f"/{rigid_body_name}_roll", float(euler_angles[0]))
-                sender.send_message(f"/{rigid_body_name}_pitch", float(euler_angles[1]))
-                sender.send_message(f"/{rigid_body_name}_yaw", float(euler_angles[2]))
+                # Send orientation data (euler angles) using separate senders
+                senders['roll'].send_message(f"/{rigid_body_name}_roll", float(euler_angles[0]))
+                senders['pitch'].send_message(f"/{rigid_body_name}_pitch", float(euler_angles[1]))
+                senders['yaw'].send_message(f"/{rigid_body_name}_yaw", float(euler_angles[2]))
                 
                 # Print status occasionally
                 if frame_count % 100 == 0:
