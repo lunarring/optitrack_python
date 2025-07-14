@@ -25,8 +25,10 @@ def main():
     parser.add_argument('--rate', type=float, default=100.0, help='Sampling rate in Hz (default: 100)')
     parser.add_argument('--test-mode', action='store_true', help='Send random values within output range instead of real data')
     parser.add_argument('--server-ip', default='10.40.49.47', help='OptiTrack server IP (default: 10.40.49.47)')
+    parser.add_argument('--scale', action='store_true', help='Scale the data to 0-1 range (default: False)')
     args = parser.parse_args()
     test_mode = args.test_mode
+    scale_data = args.scale
 
     # Determine ZMQ endpoint IP, fallback to local
     ip_address = args.ip or lt.get_local_ip()
@@ -100,7 +102,10 @@ def main():
                     for i, signal in enumerate(signals):
                         cfg = scale_config[signal]
                         raw = position[i] if i < 3 else euler_angles[i - 3]
-                        data[signal] = scale_value(raw, **cfg)
+                        if scale_data:
+                            data[signal] = scale_value(raw, **cfg)
+                        else:
+                            data[signal] = raw
                     try:
                         server.send_json({'frame': frame_count, 'name': name, **data})
                     except zmq.error.Again:
